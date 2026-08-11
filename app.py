@@ -6,7 +6,15 @@ from pathlib import Path
 import streamlit as st
 
 from model_doc_agent.documenter import generate_documentation_sync
-from model_doc_agent.docx_exporter import render_markdown_to_docx
+
+
+try:
+    from model_doc_agent.docx_exporter import render_markdown_to_docx
+except ImportError as word_export_error:
+    render_markdown_to_docx = None
+    WORD_EXPORT_ERROR = str(word_export_error)
+else:
+    WORD_EXPORT_ERROR = ""
 
 
 st.set_page_config(
@@ -63,7 +71,11 @@ if uploaded_file is not None and st.button(
                 str(temporary_path),
                 detail_level=detail_level.lower(),
             )
-            word_document = render_markdown_to_docx(report)
+            word_document = (
+                render_markdown_to_docx(report)
+                if render_markdown_to_docx is not None
+                else None
+            )
 
         st.success("Documentation created.")
         st.markdown(report)
@@ -73,15 +85,23 @@ if uploaded_file is not None and st.button(
             file_name="power_bi_documentation.md",
             mime="text/markdown",
         )
-        st.download_button(
-            "Download Word report",
-            data=word_document,
-            file_name="power_bi_documentation.docx",
-            mime=(
-                "application/vnd.openxmlformats-officedocument."
-                "wordprocessingml.document"
-            ),
-        )
+        if word_document is not None:
+            st.download_button(
+                "Download Word report",
+                data=word_document,
+                file_name="power_bi_documentation.docx",
+                mime=(
+                    "application/vnd.openxmlformats-officedocument."
+                    "wordprocessingml.document"
+                ),
+            )
+        else:
+            st.warning(
+                "Markdown documentation was created, but Word export is "
+                "unavailable because python-docx did not load. Reboot the "
+                "Streamlit app so requirements.txt is installed again. "
+                f"Technical detail: {WORD_EXPORT_ERROR}"
+            )
     except (RuntimeError, ValueError) as error:
         st.error(str(error))
     except Exception as error:

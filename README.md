@@ -183,3 +183,12 @@ python -m unittest discover -s tests -v
 - AI-written descriptions are suggestions and must be reviewed by a model
   owner before publication.
 - Use only a Gemini/Vertex AI environment approved by your organization.
+
+## Streamlit Community Cloud troubleshooting
+
+If deployment reports `ModuleNotFoundError: No module named 'docx'`, confirm
+that `requirements.txt` is in the repository root and contains `python-docx`
+(not the unrelated package named `docx`). In Streamlit Community Cloud, open
+**Manage app**, select **Reboot app**, and review the build log for the
+`python-docx` installation. The application keeps Markdown generation available
+if the optional Word-export dependency fails to load.
