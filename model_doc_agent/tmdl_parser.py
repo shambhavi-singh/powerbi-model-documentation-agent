@@ -69,6 +69,21 @@ MEASURE_PROPERTY_PREFIXES = (
     "detailRowsDefinition",
 )
 
+COLUMN_PROPERTY_PREFIXES = (
+    "dataType:",
+    "formatString:",
+    "lineageTag:",
+    "summarizeBy:",
+    "sourceColumn:",
+    "sortByColumn:",
+    "dataCategory:",
+    "isHidden",
+    "isKey",
+    "isAvailableInMdx:",
+    "annotation ",
+    "changedProperty",
+)
+
 
 def clean_identifier(value: str) -> str:
     """Remove TMDL quotation marks from an object name."""
@@ -222,6 +237,44 @@ def extract_measure_expression(
     return expression
 
 
+def extract_column_expression(
+    declaration_match: re.Match,
+    block: List[str],
+) -> str:
+    """Extract inline or multiline DAX for a calculated column."""
+
+    declaration = declaration_match.group(0)
+
+    if "=" not in declaration:
+        return ""
+
+    inline_expression = (
+        declaration_match.group("expression") or ""
+    ).strip()
+
+    if inline_expression:
+        return inline_expression
+
+    expression_lines = []
+
+    for line in block[1:]:
+        stripped_line = line.strip()
+        is_direct_property = (
+            line.startswith("\t\t")
+            and not line.startswith("\t\t\t")
+            and stripped_line.startswith(COLUMN_PROPERTY_PREFIXES)
+        )
+
+        if is_direct_property:
+            break
+
+        expression_lines.append(line)
+
+    return textwrap.dedent(
+        "\n".join(expression_lines)
+    ).strip()
+
+
 def get_table_names(
     tmdl_files: Dict[str, str]
 ) -> List[str]:
@@ -293,9 +346,11 @@ def get_table_objects(
 
             if column_match is not None:
                 block = get_object_block(lines, line_index)
-                calculated_expression = (
-                    column_match.group("expression") or ""
-                ).strip()
+                calculated_expression = extract_column_expression(
+                    column_match,
+                    block,
+                )
+                is_calculated = "=" in column_match.group(0)
 
                 columns.append({
                     "name": clean_identifier(
@@ -309,7 +364,7 @@ def get_table_objects(
                     "dataType": get_property_value(
                         block,
                         "dataType",
-                        "calculated" if calculated_expression else "unknown",
+                        "calculated" if is_calculated else "unknown",
                     ),
                     "sourceColumn": get_property_value(
                         block,
@@ -332,6 +387,7 @@ def get_table_objects(
                         "isKey",
                     ),
                     "expression": calculated_expression,
+                    "isCalculated": is_calculated,
                 })
 
             measure_match = MEASURE_DECLARATION.match(line)
