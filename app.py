@@ -29,7 +29,7 @@ st.write(
     "report and semantic model"
 )
 st.info(
-    "Gemini receives parsed names, descriptions, DAX, titles, and visible "
+    "The AI model receives parsed names, descriptions, DAX, titles, and visible "
     "text-box content. The raw ZIP, report data rows, Power Query source "
     "text, images, and selected filter values are not sent to the model. "
     "The final document focuses only on the semantic model and report."
