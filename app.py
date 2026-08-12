@@ -18,12 +18,12 @@ else:
 
 
 st.set_page_config(
-    page_title="Data Model Documentation Agent",
+    page_title="Power BI Documentation Agent",
     page_icon="📘",
     layout="wide",
 )
 
-st.title("Data Model Documentation Agent")
+st.title("Power BI Documentation Agent")
 st.write(
     "Upload a complete Power BI Project (PBIP) ZIP to document both the "
     "report and semantic model"
@@ -66,7 +66,7 @@ if uploaded_file is not None and st.button(
             temporary_file.write(uploaded_file.getbuffer())
             temporary_path = Path(temporary_file.name)
 
-        with st.spinner("Gemini is creating the documentation..."):
+        with st.spinner("Creating the documentation..."):
             report = generate_documentation_sync(
                 str(temporary_path),
                 detail_level=detail_level.lower(),
